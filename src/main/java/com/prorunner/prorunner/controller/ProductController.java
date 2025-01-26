@@ -69,20 +69,6 @@ public class ProductController {
         }
     }
 
-
-
-//    @PostMapping
-//    public ResponseEntity<StandardResponse<Product>> addProduct(@RequestBody Product product) {
-//        try {
-//            Product savedProduct = productService.saveProduct(product);
-//            return ResponseEntity.ok(new StandardResponse<>("Products added successfully", savedProduct));
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-//                    .body(new StandardResponse<>(e.getMessage(), null));
-//        }
-//    }
-
     /**
      * Add or update a product.
      * only for admins to add or update product information
@@ -223,27 +209,6 @@ public class ProductController {
                     .body(new StandardResponse<>(e.getMessage(), null));
         }
     }
-
-//    @DeleteMapping("/{id}")
-//    @PreAuthorize("hasAuthority('ADMIN')")
-//    public ResponseEntity<StandardResponse<String>> deleteProduct(@PathVariable Long id) {
-//        try {
-//             Product product = productService.getProductById(id);
-//             if(product == null){
-//                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new StandardResponse<>("Product Not Found", null));
-//             }
-//             cartService.removeProductFromAllCarts(id);
-//             productService.deleteProduct(id);
-//
-//             return ResponseEntity.ok(new StandardResponse<>("Product deleted successfully", null));
-//
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-//                    .body(new StandardResponse<>(e.getMessage(), null));
-//        }
-//    }
-
 
 
     /**
