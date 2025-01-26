@@ -2,6 +2,7 @@ package com.prorunner.prorunner.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 import java.util.HashSet;
@@ -23,6 +24,10 @@ public class UserRegistrationDTO {
 
     @NotBlank(message = "Name cannot be blank")
     private String name;
+
+    @NotBlank(message = "Phone number cannot be blank")
+    @Pattern(regexp = "\\d{10}", message = "Invalid phone number")
+    private String phoneNumber;
 
 
     private Set<String> roles = new HashSet<>();
@@ -66,5 +71,13 @@ public class UserRegistrationDTO {
 
     public void setRoles(Set<String> roles) {
         this.roles = roles;
+    }
+
+    public String getPhoneNumber() {
+        return phoneNumber;
+    }
+
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
     }
 }

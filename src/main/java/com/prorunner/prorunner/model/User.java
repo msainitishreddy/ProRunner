@@ -36,7 +36,7 @@ public class User {
     private String name;
 
     @Pattern(regexp = "\\d{10}", message = "Invalid phone number")
-    @Column
+    @Column(nullable = false)
     private String phoneNumber;
 
     @Column(nullable = false)

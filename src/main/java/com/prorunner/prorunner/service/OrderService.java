@@ -47,8 +47,10 @@ public class OrderService {
         order.setShippingAddress(shippingAddress);
         order.setCreatedAt(LocalDateTime.now());
         order.setStatus("PENDING");
+        order.setOrderItems(new ArrayList<>());  // initializing the order items....
 
         Double totalPrice = 0.0;
+
 
         for (CartProduct cartProduct:new ArrayList<>(cart.getCartProducts())){
             Product product = cartProduct.getProduct();
@@ -59,6 +61,7 @@ public class OrderService {
             // Deduct stock
             product.setStock(product.getStock() - cartProduct.getQuantity());
             productRepository.save(product);
+
             //Create and add orderItem
             OrderItem orderItem = new OrderItem();
             orderItem.setOrder(order);
@@ -66,18 +69,20 @@ public class OrderService {
             orderItem.setQuantity(cartProduct.getQuantity());
             orderItem.setUnitPrice(product.getPrice());
             orderItem.setSubtotal(cartProduct.getQuantity()*product.getPrice());
-            order.getOrderItems().add(orderItem);
 
+            // Add order item to the order
+            order.getOrderItems().add(orderItem);
+            // Total price calculations
             totalPrice +=orderItem.getSubtotal();
         }
 
+        // Setting TotalPrice of the order....
         order.setTotalPrice(totalPrice);
 
         //clear cart products and update cart
         cartProductRepository.deleteAllByCart(cart);
         cart.getCartProducts().clear(); // Clear in-memory references
-
-        cart.setTotalPrice(0.0);
+        cart.setTotalPrice(0.0); // setting the cart total price to 0 after emptying the cart.
         cartRepository.save(cart);
 
         return orderRepository.save(order);

@@ -38,7 +38,8 @@ public class Address {
     @JsonBackReference
     private User user;
 
-    @OneToMany(mappedBy = "shippingAddress", cascade = CascadeType.ALL, orphanRemoval = true) // Fixed mapping
+    @OneToMany(mappedBy = "shippingAddress", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<Order> orders = new ArrayList<>();
 
     public List<Order> getOrders() {

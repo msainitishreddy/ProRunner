@@ -43,6 +43,7 @@ public class AdminController {
         try {
             // Map DTO to User entity
             User user = new User();
+            user.setName(userDTO.getName());
             user.setUsername(userDTO.getUsername());
             user.setEmail(userDTO.getEmail());
             user.setPassword(userDTO.getPassword());
