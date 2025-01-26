@@ -14,7 +14,7 @@ public class Order {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
@@ -22,7 +22,7 @@ public class Order {
     @JsonIgnore
     private List<OrderItem> orderItems = new ArrayList<>();
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false, cascade = CascadeType.PERSIST) // Ensures the Address is saved if it doesn't exist
+    @ManyToOne(fetch = FetchType.EAGER, optional = false, cascade = CascadeType.PERSIST) // Ensures the Address is saved if it doesn't exist
     @JoinColumn(name = "address_id", referencedColumnName = "id", nullable = false)
     private Address shippingAddress;
 
