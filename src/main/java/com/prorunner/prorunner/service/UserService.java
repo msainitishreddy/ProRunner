@@ -22,9 +22,6 @@ import com.prorunner.prorunner.exception.EmailAlreadyExistsException; // Custom 
 import com.prorunner.prorunner.exception.UsernameAlreadyExistsException;
 import org.springframework.data.jpa.domain.Specification;
 import jakarta.persistence.criteria.Predicate;
-
-
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;

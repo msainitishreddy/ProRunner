@@ -1,7 +1,6 @@
 package com.prorunner.prorunner.model;
 
 import jakarta.persistence.*;
-import org.springframework.security.core.parameters.P;
 
 @Entity
 public class OrderItem {

@@ -1,7 +1,6 @@
 package com.prorunner.prorunner.controller;
 
 import com.prorunner.prorunner.dto.OrderDTO;
-import com.prorunner.prorunner.model.Order;
 import com.prorunner.prorunner.service.OrderService;
 import com.prorunner.prorunner.util.StandardResponse;
 import io.swagger.v3.oas.annotations.Operation;

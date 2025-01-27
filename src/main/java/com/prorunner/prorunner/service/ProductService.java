@@ -5,13 +5,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.prorunner.prorunner.model.Product;
 import com.prorunner.prorunner.repository.ProductRepository;
-
 import java.util.ArrayList;
 import java.util.List;
 import jakarta.persistence.criteria.Predicate;
-
 import org.modelmapper.ModelMapper;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -54,7 +51,7 @@ public class ProductService {
         return mapToDTO(product);
     }
 
-    // Delete a product by Id
+    // Delete a product by productId.
     public void deleteProduct(Long id){
         if (!productRepository.existsById(id)) {
             throw new RuntimeException("Product not found with ID: " + id);
