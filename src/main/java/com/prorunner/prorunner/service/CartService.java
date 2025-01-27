@@ -128,52 +128,6 @@ public class CartService {
         return mapToDTO(cart);
     }
 
-    /*if product stock = 10 and user requested for more than 10
-    then stock allotted to the user is 10.*/
-    @Transactional
-    public CartDTO addProductToCartWithPartialStock(Long cartId, Long productId, int quantity) {
-
-        logger.info("Adding product ID: {} with partial stock adjustment to cart ID: {}", productId, cartId);
-
-        Cart cart = cartRepository.findById(cartId)
-                .orElseThrow(() -> new RuntimeException("Cart not found with ID: " + cartId));
-
-
-        // Fetch the product
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("Product with ID " + productId + " does not exist!"));
-
-        // Check stock availability
-        int availableStock = product.getAvailableStock();
-        if (availableStock <= 0) {
-            throw new RuntimeException("Product is out of stock.");
-        }
-        int finalQuantity = Math.min(quantity, availableStock);
-
-        CartProduct cartProduct = cart.getCartProducts().stream()
-                .filter(cp -> cp.getProduct().getId().equals(productId))
-                .findFirst()
-                .orElseGet(() -> {
-                    CartProduct newCartProduct = new CartProduct(cart, product, finalQuantity, product.getPrice());
-                    cart.getCartProducts().add(newCartProduct);
-                    return newCartProduct;
-                });
-
-        cartProduct.setQuantity(cartProduct.getQuantity() + finalQuantity);
-        cart.setTotalPrice(cart.getCartProducts().stream()
-                .mapToDouble(CartProduct::getSubtotal)
-                .sum());
-
-        product.setReservedStock(product.getReservedStock() + finalQuantity);
-        productRepository.save(product);
-        cartRepository.save(cart);
-
-        return mapToDTO(cart);
-    }
-
-
-
-
     @Transactional
     public CartDTO removeProductFromCart(Long cartId, Long productId){
 
@@ -197,64 +151,33 @@ public class CartService {
         return mapToDTO(cartRepository.save(cart));
     }
 
+    /**
+     * Update the quantity of a product in the cart.
+     */
     @Transactional
-    public CartDTO updateProductQuantity(Long cartId, Long productId, int newQuantity) {
-        if (newQuantity <= 0) {
-            throw new IllegalArgumentException("Quantity must be greater than zero.");
-        }
+    public CartDTO addProductQuantity(Long cartId, Long productId, boolean increment){
+        logger.info("Adjusting product quantity (increment: {}) for product {} in cart {}", increment, productId, cartId);
 
-        // Fetch the cart
+        //Fetch cart and product
         Cart cart = cartRepository.findById(cartId)
-                .orElseThrow(() -> new RuntimeException("Cart not found with ID: " + cartId));
-
-        // Find the cart product in the cart
-        CartProduct cartProduct = cart.getCartProducts().stream()
-                .filter(cp -> cp.getProduct().getId().equals(productId))
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("Product not found in the cart."));
-
-        // Update the quantity and subtotal
-        cartProduct.setQuantity(newQuantity);
-        cartProduct.updateSubtotal();
-
-        // Recalculate the total price of the cart
-        double updatedTotalPrice = cart.getCartProducts().stream()
-                .mapToDouble(CartProduct::getSubtotal)
-                .sum();
-        cart.setTotalPrice(updatedTotalPrice);
-
-        // Save the updated cart
-        Cart updatedCart = cartRepository.save(cart);
-
-        // Convert to CartDTO and return
-        return mapToDTO(updatedCart);
-    }
-
-
-    @Transactional
-    public CartDTO decreaseProductQuantity(Long cartId, Long productId, int quantity){
-
-        logger.info("Decreasing quantity of product {} in cart {} by {}", productId, cartId, quantity);
-        if(cartId == null || productId == null || quantity <=0){
-            throw new IllegalArgumentException("Invalid cartId, productId, or quantity.");
-        }
-
-        Cart cart = cartRepository.findById(cartId)
-                .orElseThrow(()->new RuntimeException("Cart not found with ID: "+cartId));
+                .orElseThrow(()-> new RuntimeException("Cart not found with ID: "+cartId));
 
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("Product with ID " + productId + " does not exist."));
+                .orElseThrow(() -> new RuntimeException("Product not found with ID: "+productId));
 
-        CartProduct cartProduct = cartProductRepository.findByCartAndProduct(cart, product)
-                .orElseThrow(() -> new RuntimeException("Product not found in the cart."));
+        // Find cart and Product
+        CartProduct cartProduct = cartProductRepository.findByCartAndProduct(cart,product)
+                .orElseThrow(()->new RuntimeException("Product not found in the cart"));
 
-        int updatedQuantity = cartProduct.getQuantity() - quantity;
+        // changing the product quantity ---> increasing or decreasing the quantity required by user or client
+        int updatedQuantity = cartProduct.getQuantity() + (increment ? 1 : -1);
 
-        if (updatedQuantity > 0){
+        if (updatedQuantity>0){
             cartProduct.setQuantity(updatedQuantity);
             cartProduct.updateSubtotal();
             cartProductRepository.save(cartProduct);
         } else {
+            // Remove product from cart if required quantity is less than 1.
             cartProductRepository.delete(cartProduct);
         }
 
@@ -262,6 +185,7 @@ public class CartService {
 
         return mapToDTO(cartRepository.save(cart));
     }
+
 
     @Transactional
     public void removeProductFromAllCarts(Long productId){
@@ -276,6 +200,7 @@ public class CartService {
         }
 
     }
+
 
     public Page<CartProductDTO> viewCart(Long cartId, int page, int size){
         logger.info("Fetching cart products for cart ID: {}", cartId);

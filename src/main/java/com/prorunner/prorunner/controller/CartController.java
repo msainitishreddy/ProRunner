@@ -100,69 +100,28 @@ public class CartController {
     /**
      * Update the quantity of a product in the cart.
      */
-    @Operation(summary = "Update the quantity of a product in the cart", description = "Change the quantity of a specific product in the cart.")
+    @Operation(summary = "Increasing or Decreasing the product quantity in the cart")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Quantity updated successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid quantity"),
+            @ApiResponse(responseCode = "200", description = "Product quantity updated successfully"),
             @ApiResponse(responseCode = "404", description = "Cart or Product not found")
     })
-    @PatchMapping("/{cartId}/update/{productId}")
+    @PatchMapping("/{cartId}/quantity/{productId}")
     @PreAuthorize("hasAuthority('USER') or @securityService.isCartOwner(#cartId)")
-    public ResponseEntity<StandardResponse<CartDTO>> updateProductQuantity(
+    public ResponseEntity<StandardResponse<CartDTO>> addProductQuantity(
             @PathVariable Long cartId,
             @PathVariable Long productId,
-            @RequestParam int quantity) {
+            @RequestParam boolean increment){
         try {
-            if (quantity <= 0) {
-                throw new IllegalArgumentException("Quantity must be greater than 0");
-            }
-            logger.info("Updating quantity of product {} in cart {} to {}", productId, cartId, quantity);
-            CartDTO updatedCart = cartService.updateProductQuantity(cartId, productId, quantity);
-            return ResponseEntity.ok(new StandardResponse<>("Quantity updated successfully", updatedCart));
-        } catch (IllegalArgumentException e) {
-            logger.error("Invalid quantity: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new StandardResponse<>(e.getMessage(), null));
-        } catch (RuntimeException e) {
-            logger.error("Error updating product quantity: {}", e.getMessage(), e);
+            CartDTO updatedCart = cartService.addProductQuantity(cartId,productId,increment);
+            String action = increment ? "incremented":"decremented";
+            return ResponseEntity.ok(new StandardResponse<>("Product Quantity "+action+" successfully",updatedCart));
+        } catch (RuntimeException e){
+            logger.error("Error in adjusting the quantity: {}"+e.getMessage(),e);
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(new StandardResponse<>(e.getMessage(), null));
         }
     }
 
-    /**
-     * Decrease product quantity in the cart.
-     */
-    @Operation(summary = "Decrease product quantity in the cart")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Product quantity decreased successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid quantity or error updating cart"),
-            @ApiResponse(responseCode = "404", description = "Cart or Product not found")
-    })
-    @PutMapping("/{cartId}/decrease/{productId}")
-    @PreAuthorize("hasAuthority('USER') or @securityService.isCartOwner(#cartId)")
-    public ResponseEntity<?> decreaseProductQuantity(
-            @PathVariable Long cartId,
-            @PathVariable Long productId,
-            @RequestParam int quantity){
-        try {
-            if (quantity <= 0) {
-                return ResponseEntity.badRequest()
-                        .body(new StandardResponse<>("Quantity must be greater than 0", null));
-            }
-            logger.info("Decreasing quantity of product {} in cart {} by {}", productId, cartId, quantity);
-            CartDTO updatedCart = cartService.decreaseProductQuantity(cartId, productId, quantity);
-            return ResponseEntity.ok(new StandardResponse<>("Product quantity decreased successfully", updatedCart));
-        } catch (IllegalArgumentException e) {
-            logger.error("Invalid quantity: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new StandardResponse<>(e.getMessage(), null));
-        } catch (RuntimeException e) {
-            logger.error("Error updating product quantity: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(new StandardResponse<>(e.getMessage(), null));
-        }
-    }
 
     /**
      * Clear the cart.
@@ -251,29 +210,6 @@ public class CartController {
         }
     }
 
-
-    @Operation(summary = "Add a product to the cart with partial stock if insufficient")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Product added to cart with partial stock"),
-            @ApiResponse(responseCode = "404", description = "Product or cart not found"),
-            @ApiResponse(responseCode = "400", description = "Invalid request")
-    })
-    @PostMapping("/{cartId}/add-partial")
-    @PreAuthorize("hasAuthority('USER') or @securityService.isCartOwner(#cartId)")
-    public ResponseEntity<StandardResponse<CartDTO>> addProductToCartWithPartialStock(
-            @PathVariable Long cartId,
-            @RequestParam Long productId,
-            @RequestParam int requestedQuantity) {
-        try {
-            logger.info("Adding product ID: {} with requested quantity: {} to cart ID: {}", productId, requestedQuantity, cartId);
-            CartDTO updatedCart = cartService.addProductToCartWithPartialStock(cartId, productId, requestedQuantity);
-            return ResponseEntity.ok(new StandardResponse<>("Product added to cart with partial stock", updatedCart));
-        } catch (RuntimeException e) {
-            logger.error("Error adding product to cart with partial stock: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(new StandardResponse<>(e.getMessage(), null));
-        }
-    }
 
     @Operation(summary = "Get or create a cart for a user")
     @ApiResponses({
