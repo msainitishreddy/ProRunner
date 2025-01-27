@@ -116,7 +116,7 @@ public class CartController {
             String action = increment ? "incremented":"decremented";
             return ResponseEntity.ok(new StandardResponse<>("Product Quantity "+action+" successfully",updatedCart));
         } catch (RuntimeException e){
-            logger.error("Error in adjusting the quantity: {}"+e.getMessage(),e);
+            logger.error("Error in adjusting the quantity: {}", e.getMessage(),e);
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(new StandardResponse<>(e.getMessage(), null));
         }
