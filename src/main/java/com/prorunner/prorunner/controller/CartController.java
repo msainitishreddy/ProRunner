@@ -60,13 +60,14 @@ public class CartController {
     })
     @PostMapping("/{cartId}/add")
     @PreAuthorize("hasAuthority('USER') or @securityService.isCartOwner(#cartId)")
-    public ResponseEntity<StandardResponse<CartDTO>> addProductToCart(@PathVariable Long cartId,
-                                                                      @RequestParam Long userId,
+    public ResponseEntity<StandardResponse<CartDTO>> addProductToCart(
+                                                                      @PathVariable(required = false) String sessionId,
+                                                                      @PathVariable(required = false) Long userId,
                                                                       @RequestParam Long productId,
                                                                       @RequestParam int quantity){
         try {
-            logger.info("Adding product {} with quantity {} to cart {}", productId, quantity, cartId);
-            CartDTO updatedCart = cartService.addProductToCart(cartId, userId, productId, quantity);
+            logger.info("Adding product {} with quantity {} to cart", productId, quantity);
+            CartDTO updatedCart = cartService.addProductToCart(sessionId, userId, productId, quantity);
             return ResponseEntity.ok(new StandardResponse<>("Product added to cart successfully", updatedCart));
         } catch (Exception e) {
             logger.error("Error adding product to cart: {}", e.getMessage(), e);
@@ -218,10 +219,12 @@ public class CartController {
     })
     @GetMapping("/user/{userId}")
     @PreAuthorize("hasAuthority('USER') or @securityService.isUser(#userId)")
-    public ResponseEntity<StandardResponse<CartDTO>> getOrCreateCart(@PathVariable Long userId) {
+    public ResponseEntity<StandardResponse<CartDTO>> getOrCreateCart(
+            @PathVariable(required = false) String sessionId,
+            @PathVariable(required = false) Long userId) {
         try {
             logger.info("Fetching or creating cart for user ID: {}", userId);
-            CartDTO cartDTO = cartService.getOrCreateCart(userId);
+            CartDTO cartDTO = cartService.getOrCreateCart(sessionId,userId);
             return ResponseEntity.ok(new StandardResponse<>("Cart fetched or created successfully", cartDTO));
         } catch (RuntimeException e) {
             logger.error("Error fetching or creating cart for user ID: {}", e.getMessage(), e);
@@ -244,16 +247,20 @@ public class CartController {
     @PostMapping("/merge")
     @PreAuthorize("hasAuthority('USER')")
     public ResponseEntity<StandardResponse<CartDTO>> mergeCarts(
-            @RequestParam Long guestCartId,
-            @RequestParam Long userCartId) {
+            @RequestParam String guestSessionId,
+            @RequestParam Long userId) {
         try {
-            logger.info("Merging cart {} into cart {}", guestCartId, userCartId);
-            CartDTO updatedCart = cartService.mergeCarts(guestCartId, userCartId);
+            logger.info("Merging guest cart with session ID: {} into user cart for user ID: {}", guestSessionId, userId);
+            CartDTO updatedCart = cartService.mergeCarts(guestSessionId, userId);
             return ResponseEntity.ok(new StandardResponse<>("Carts merged successfully", updatedCart));
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             logger.error("Error merging carts: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new StandardResponse<>(e.getMessage(), null));
+        }  catch (Exception e) {
+            logger.error("Unexpected error while merging carts: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new StandardResponse<>("Error merging carts", null));
+                    .body(new StandardResponse<>("An unexpected error occurred", null));
         }
     }
 

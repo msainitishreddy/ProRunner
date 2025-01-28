@@ -29,9 +29,7 @@ public class CartProduct {
     @Column(nullable = false)
     private int quantity;
 
-    public CartProduct(){
-
-    }
+    public CartProduct(){}
 
     public CartProduct(Cart cart, Product product, int quantity, Double unitPrice) {
         this.cart = cart;

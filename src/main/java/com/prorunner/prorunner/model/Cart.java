@@ -25,6 +25,10 @@ public class Cart {
 
     private Double totalPrice;
 
+    @Column(unique = true)
+    private String sessionId; // To uniquely identify guest carts
+
+
     public Cart(){
 
     }
@@ -59,5 +63,17 @@ public class Cart {
 
     public void setUser(User user) {
         this.user = user;
+    }
+
+    public void setTotalPrice(Double totalPrice) {
+        this.totalPrice = totalPrice;
+    }
+
+    public String getSessionId() {
+        return sessionId;
+    }
+
+    public void setSessionId(String sessionId) {
+        this.sessionId = sessionId;
     }
 }

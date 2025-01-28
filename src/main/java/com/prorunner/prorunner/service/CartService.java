@@ -65,6 +65,8 @@ public class CartService {
         return modelMapper.map(cartProduct,CartProductDTO.class);
     }
 
+
+
     // Fetch cart by ID and map to CartDTO class
     public CartDTO getCartById(Long cartId){
         logger.info("Fetching cart with ID: {}", cartId);
@@ -75,11 +77,12 @@ public class CartService {
 
 
     @Transactional
-    public CartDTO addProductToCart(Long cartId, Long userId, Long productId, int quantity){
+    public CartDTO addProductToCart(String sessionId, Long productId, Long userId, int quantity){
+        Cart cart = getOrCreateCartEntity(sessionId, userId);
 
-        logger.info("Adding product {} with quantity {} to cart {}", productId, quantity, cartId);
+        logger.info("Adding product {} with quantity {} to cart {}", productId, quantity);
 
-        if (cartId == null || userId == null || productId == null || quantity <= 0 ){
+        if (sessionId == null || userId == null || productId == null || quantity <= 0 ){
             throw new IllegalArgumentException("Invalid cartId, userId, productId, or quantity");
         }
 
@@ -90,13 +93,8 @@ public class CartService {
             throw new RuntimeException("Only " + product.getAvailableStock() + " units available for product: " + product.getName());
         }
 
-        product.setReservedStock(product.getReservedStock()+quantity);
-        productRepository.save(product);
 
-        Cart cart = cartRepository.findById(cartId)
-                .orElseThrow(() -> new RuntimeException("Cart not found with ID: " + cartId));
-
-        CartProduct cartProduct = cartProductRepository.findByCartAndProduct(cart,product)
+        CartProduct cartProduct = cartProductRepository.findByCartAndProduct(cart, product)
                 .orElseGet(() -> new CartProduct(cart, product, 0, product.getPrice()));
 
         if(cartProduct.getUnitPrice() == null){
@@ -105,27 +103,56 @@ public class CartService {
 
         cartProduct.setQuantity(cartProduct.getQuantity() + quantity);
         cartProduct.updateSubtotal();
-
         cartProductRepository.save(cartProduct);
+
+        product.setReservedStock(product.getReservedStock() + quantity);
+        productRepository.save(product);
         updateCartTotal(cart);
 
-        return mapToDTO(cartRepository.save(cart));
-    }
-
-
-    public CartDTO getOrCreateCart(Long userId){
-        logger.info("Fetching or creating cart for user ID: {}", userId);
-        Cart cart = cartRepository.findByUserId(userId)
-                .orElseGet(() -> {
-                    User user = userRepository.findById(userId)
-                            .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId)); // Assuming `User` has an ID constructor
-                    Cart newCart = new Cart();
-                    newCart.setUser(user);
-                    newCart.setTotalPrice(0.0);
-                    return cartRepository.save(newCart);
-                });
         return mapToDTO(cart);
     }
+
+    private Cart getOrCreateCartEntity(String sessionId, Long userId) {
+        if (userId != null) {
+            return cartRepository.findByUserId(userId)
+                    .orElseGet(() -> createUserCart(userId));
+        } else {
+            return cartRepository.findBySessionId(sessionId)
+                    .orElseGet(() -> createGuestCart(sessionId));
+        }
+    }
+
+
+    public CartDTO getOrCreateCart(String sessionId, Long userId){
+        Cart cart;
+
+        if(userId !=null){
+            cart = cartRepository.findByUserId(userId)
+                    .orElseGet(() -> createUserCart(userId));
+        } else {
+            cart = cartRepository.findBySessionId(sessionId)
+                    .orElseGet(() -> createGuestCart(sessionId));
+        }
+
+        return mapToDTO(cart);
+    }
+
+    private Cart createUserCart(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
+        Cart cart = new Cart();
+        cart.setUser(user);
+        cart.setTotalPrice(0.0);
+        return cartRepository.save(cart);
+    }
+
+    private Cart createGuestCart(String sessionId) {
+        Cart cart = new Cart();
+        cart.setSessionId(sessionId);
+        cart.setTotalPrice(0.0);
+        return cartRepository.save(cart);
+    }
+
 
     @Transactional
     public CartDTO removeProductFromCart(Long cartId, Long productId){
@@ -240,13 +267,11 @@ public class CartService {
     private void updateCartTotal(Cart cart) {
 
         logger.info("Updating total price for cart ID: {}", cart.getId());
-        Double totalPrice = cartProductRepository.findByCart(cart).stream()
-                .map(CartProduct::getSubtotal)
-                .filter(Objects::nonNull) // Safeguard against null subtotals
-                .mapToDouble(Double::doubleValue)
+        Double totalPrice = cart.getCartProducts().stream()
+                .mapToDouble(CartProduct::getSubtotal)
                 .sum();
-
         cart.setTotalPrice(totalPrice != null ? totalPrice : 0.0);
+        cartRepository.save(cart);
     }
 
 
@@ -260,63 +285,67 @@ public class CartService {
     }
 
 
-    /**
-     * Merges the contents of one cart into another.
-     *
-     * @param guestCartId The ID of the cart to merge from.
-     * @param userCartId The ID of the cart to merge into.
-     * @return The updated target cart as a DTO.
-     */
-    public CartDTO mergeCarts(Long guestCartId, Long userCartId) {
-        // Fetch both carts
-        Cart sourceCart = cartRepository.findById(guestCartId)
-                .orElseThrow(() -> new RuntimeException("Source cart not found with ID: " + guestCartId));
-        Cart targetCart = cartRepository.findById(userCartId)
-                .orElseThrow(() -> new RuntimeException("Target cart not found with ID: " + userCartId));
+    public CartDTO getOrCreateGuestCart(String sessionId) {
+        Cart cart = cartRepository.findBySessionId(sessionId)
+                .orElseGet(() -> {
+                    Cart newCart = new Cart();
+                    newCart.setSessionId(sessionId);
+                    newCart.setTotalPrice(0.0);
+                    return cartRepository.save(newCart);
+                });
 
-        // Merge cart products
-        for (CartProduct sourceCartProduct : sourceCart.getCartProducts()) {
-            boolean productExists = false;
-
-            // Check if the product already exists in the target cart
-            for (CartProduct targetCartProduct : targetCart.getCartProducts()) {
-                if (targetCartProduct.getProduct().getId().equals(sourceCartProduct.getProduct().getId())) {
-                    // Increment the quantity and update the subtotal
-                    targetCartProduct.setQuantity(targetCartProduct.getQuantity() + sourceCartProduct.getQuantity());
-                    targetCartProduct.updateSubtotal();
-                    productExists = true;
-                    break;
-                }
-            }
-
-            // If the product doesn't exist in the target cart, add it
-            if (!productExists) {
-                CartProduct newCartProduct = new CartProduct(
-                        targetCart,
-                        sourceCartProduct.getProduct(),
-                        sourceCartProduct.getQuantity(),
-                        sourceCartProduct.getUnitPrice()
-                );
-                targetCart.getCartProducts().add(newCartProduct);
-            }
-        }
-
-        // Recalculate the total price of the target cart
-        targetCart.setTotalPrice(
-                targetCart.getCartProducts().stream()
-                        .mapToDouble(CartProduct::getSubtotal)
-                        .sum()
-        );
-
-        // Save the updated target cart
-        cartRepository.save(targetCart);
-
-        // Delete the source cart
-        cartRepository.delete(sourceCart);
-
-        return mapToDTO(targetCart);
+        return mapToDTO(cart);
     }
 
+
+
+    /**
+     * Merges the contents of a guest cart into a user's cart after login.
+     *
+     * @param guestSessionId The session ID of the guest cart.
+     * @param userId         The ID of the logged-in user.
+     * @return The updated user cart as a DTO.
+     */
+    @Transactional
+    public CartDTO mergeCarts(String guestSessionId, Long userId) {
+        logger.info("Merging guest cart with session ID: {} into user cart for user ID: {}", guestSessionId, userId);
+
+        // Fetch the guest cart by session ID
+        Cart guestCart = cartRepository.findBySessionId(guestSessionId)
+                .orElseThrow(() -> new RuntimeException("Guest cart not found for session: " + guestSessionId));
+
+        // Fetch or create the user cart
+        Cart userCart = cartRepository.findByUserId(userId)
+                .orElseGet(()->createUserCart(userId));
+
+        if (guestCart == null || guestCart.getCartProducts().isEmpty()) {
+            logger.info("No guest cart found or guest cart is empty. Returning the user's cart.");
+            return mapToDTO(userCart);
+        }
+
+        // Merge guest cart products into user cart
+        for (CartProduct guestProduct : guestCart.getCartProducts()) {
+
+            CartProduct userProduct = cartProductRepository.findByCartAndProduct(userCart,guestProduct.getProduct())
+                    .orElseGet(()->new CartProduct(userCart,guestProduct.getProduct(),0,guestProduct.getUnitPrice()));
+
+            userProduct.setQuantity(userProduct.getQuantity() + guestProduct.getQuantity());
+            userProduct.updateSubtotal();
+            cartProductRepository.save(userProduct);
+        }
+        // Update total price of the user cart
+        userCart.setTotalPrice(userCart.getCartProducts().stream()
+                .mapToDouble(CartProduct::getSubtotal)
+                .sum());
+        cartRepository.save(userCart);
+
+        // Delete guest cart
+        cartRepository.delete(guestCart);
+
+        logger.info("Guest cart merged successfully into user cart for user ID: {}", userId);
+
+        return mapToDTO(userCart);
+    }
 
 
 }
