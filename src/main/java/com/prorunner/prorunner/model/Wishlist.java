@@ -1,5 +1,6 @@
 package com.prorunner.prorunner.model;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 
 import java.util.ArrayList;
@@ -17,6 +18,7 @@ public class Wishlist {
     private User user;
 
     @OneToMany(mappedBy = "wishlist", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
     private List<WishlistItem> items = new ArrayList<>();
 
     public Long getId() {

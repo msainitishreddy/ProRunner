@@ -1,5 +1,6 @@
 package com.prorunner.prorunner.model;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 
 @Entity
@@ -11,10 +12,12 @@ public class WishlistItem {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "wishlist_id", nullable = false)
+    @JsonManagedReference
     private Wishlist wishlist;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", nullable = false)
+    @JsonManagedReference
     private Product product;
 
     public Long getId() {

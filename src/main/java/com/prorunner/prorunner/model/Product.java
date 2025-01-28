@@ -22,6 +22,7 @@ public class Product {
     private Double price;
 
     private String size;
+
     private String category;
 
     private String imageUrl;
