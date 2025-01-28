@@ -38,7 +38,7 @@ public class AdminController {
     private final List<String> adminLogs = new ArrayList<>();
 
     @PostMapping("/register")
-    @PreAuthorize("hasAuthority('ADMIN')")// remove this and try to test with exist security
+    //@PreAuthorize("hasAuthority('ADMIN')")// remove this and try to test with exist security
     public ResponseEntity<String> registerAdmin(@Valid @RequestBody UserRegistrationDTO userDTO) {
         try {
             // Map DTO to User entity
@@ -47,6 +47,7 @@ public class AdminController {
             user.setUsername(userDTO.getUsername());
             user.setEmail(userDTO.getEmail());
             user.setPassword(userDTO.getPassword());
+            user.setPhoneNumber(userDTO.getPhoneNumber());
 
 
 

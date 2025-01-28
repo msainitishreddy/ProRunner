@@ -78,20 +78,33 @@ public class CartService {
 
     @Transactional
     public CartDTO addProductToCart(String sessionId, Long productId, Long userId, int quantity){
+        if ((sessionId == null || sessionId.isEmpty()) && userId == null) {
+            throw new IllegalArgumentException("Either sessionId or userId must be provided");
+        }
+
         Cart cart = getOrCreateCartEntity(sessionId, userId);
 
-        logger.info("Adding product {} with quantity {} to cart {}", productId, quantity);
-
-        if (sessionId == null || userId == null || productId == null || quantity <= 0 ){
-            throw new IllegalArgumentException("Invalid cartId, userId, productId, or quantity");
+        if (productId == null || quantity <= 0) {
+            throw new IllegalArgumentException("Product ID and quantity must be valid");
         }
+
 
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("Product with ID "+ productId + " does not exist!"));
+                .orElseThrow(() -> new RuntimeException("Product with ID " + productId + " does not exist"));
 
-        if (product.getAvailableStock() == null || product.getAvailableStock() < quantity) {
-            throw new RuntimeException("Only " + product.getAvailableStock() + " units available for product: " + product.getName());
+        if (product.getAvailableStock() < quantity) {
+            throw new RuntimeException("Insufficient stock for product: " + product.getName());
         }
+
+        logger.info("Adding product {} with quantity {} to cart", productId, quantity);
+
+//        if ((sessionId == null || sessionId.isEmpty()) && userId == null) {
+//            throw new IllegalArgumentException("Either sessionId or userId must be provided");
+//        }
+
+//        if (product.getAvailableStock() == null || product.getAvailableStock() < quantity) {
+//            throw new RuntimeException("Only " + product.getAvailableStock() + " units available for product: " + product.getName());
+//        }
 
 
         CartProduct cartProduct = cartProductRepository.findByCartAndProduct(cart, product)

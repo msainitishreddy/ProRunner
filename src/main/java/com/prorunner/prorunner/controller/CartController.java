@@ -62,17 +62,20 @@ public class CartController {
     @PreAuthorize("hasAuthority('USER') or @securityService.isCartOwner(#cartId)")
     public ResponseEntity<StandardResponse<CartDTO>> addProductToCart(
                                                                       @PathVariable(required = false) String sessionId,
-                                                                      @PathVariable(required = false) Long userId,
+                                                                      @RequestParam(required = false) Long userId,
                                                                       @RequestParam Long productId,
                                                                       @RequestParam int quantity){
         try {
             logger.info("Adding product {} with quantity {} to cart", productId, quantity);
             CartDTO updatedCart = cartService.addProductToCart(sessionId, userId, productId, quantity);
             return ResponseEntity.ok(new StandardResponse<>("Product added to cart successfully", updatedCart));
-        } catch (Exception e) {
+        } catch (IllegalArgumentException e) {
+            logger.error("Invalid input: {}", e.getMessage(), e);
+            return ResponseEntity.badRequest().body(new StandardResponse<>(e.getMessage(), null));
+        }catch (Exception e) {
             logger.error("Error adding product to cart: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new StandardResponse<>(e.getMessage(), null));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new StandardResponse<>("An unexpected error occurred", null));
         }
     }
 
