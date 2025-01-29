@@ -77,15 +77,19 @@ public class CartService {
 
 
     @Transactional
-    public CartDTO addProductToCart(String sessionId, Long productId, Long userId, int quantity){
+    public CartDTO addProductToCart(String sessionId, Long userId, Long productId, int quantity){
+
         if ((sessionId == null || sessionId.isEmpty()) && userId == null) {
             throw new IllegalArgumentException("Either sessionId or userId must be provided");
         }
 
         Cart cart = getOrCreateCartEntity(sessionId, userId);
 
-        if (productId == null || quantity <= 0) {
-            throw new IllegalArgumentException("Product ID and quantity must be valid");
+        if (productId == null) {
+            throw new IllegalArgumentException("Product ID must be valid");
+        }
+        if(quantity <= 0){
+            throw new IllegalArgumentException("Provide a valid quantity");
         }
 
 

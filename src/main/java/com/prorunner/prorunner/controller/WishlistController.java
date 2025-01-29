@@ -6,6 +6,7 @@ import com.prorunner.prorunner.util.StandardResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/wishlist")
 public class WishlistController {
 
+    @Autowired
     private WishlistService wishlistService;
 
     @Operation(summary = "Get or create a wishlist", description = "Fetches the wishlist for a user or creates a new one if it doesn't exist.")
@@ -37,6 +39,7 @@ public class WishlistController {
     @PostMapping("/{userId}/add/{productId}")
     @PreAuthorize("hasAuthority('USER') or @securityService.isUser(#userId)")
     public  ResponseEntity<StandardResponse<WishlistDTO>> addProductToWishlist(@PathVariable Long userId, @PathVariable Long productId){
+
         WishlistDTO wishlist = wishlistService.addProductToWishlist(userId,productId);
         return ResponseEntity.ok(new StandardResponse<>("Product added to wishlist successfully", wishlist));
     }

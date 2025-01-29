@@ -58,13 +58,13 @@ public class CartController {
             @ApiResponse(responseCode = "200", description = "Product added to cart successfully"),
             @ApiResponse(responseCode = "400", description = "Error adding product to cart")
     })
-    @PostMapping("/{cartId}/add")
-    @PreAuthorize("hasAuthority('USER') or @securityService.isCartOwner(#cartId)")
+    @PostMapping("/add")
+    //@PreAuthorize("hasAuthority('USER') or @securityService.isCartOwner(#cartId)")
     public ResponseEntity<StandardResponse<CartDTO>> addProductToCart(
-                                                                      @PathVariable(required = false) String sessionId,
+                                                                      @RequestParam(required = false) String sessionId,
                                                                       @RequestParam(required = false) Long userId,
-                                                                      @RequestParam Long productId,
-                                                                      @RequestParam int quantity){
+                                                                      @RequestParam(name = "productId") Long productId,
+                                                                      @RequestParam(name = "quantity") int quantity){
         try {
             logger.info("Adding product {} with quantity {} to cart", productId, quantity);
             CartDTO updatedCart = cartService.addProductToCart(sessionId, userId, productId, quantity);

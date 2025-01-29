@@ -56,6 +56,7 @@ public class WishlistService {
                 .orElseGet(()->{
                     User user = userRepository.findById(userId)
                             .orElseThrow(() -> new RuntimeException("User not found with ID: "+userId));
+
                     Wishlist wishlist = new Wishlist();
                     wishlist.setUser(user);
                     wishlistRepository.save(wishlist);
@@ -66,16 +67,34 @@ public class WishlistService {
     @Transactional
     public WishlistDTO addProductToWishlist(Long userId, Long productId){
         Wishlist wishlist = wishlistRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Wishlist not found for user with ID: " + userId));
+                .orElseGet(() -> {
+                    User user = userRepository.findById(userId)
+                            .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
+                    Wishlist newWishlist = new Wishlist();
+                    newWishlist.setUser(user);
+                    return wishlistRepository.save(newWishlist);
+                });
+
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found with ID: " + productId));
 
-        WishlistItem item = new WishlistItem();
-        item.setProduct(product);
+        // Ensure wishlist is persisted before adding items
+        if (wishlist.getId() == null) {
+            wishlist = wishlistRepository.save(wishlist);
+        }
 
-        wishlist.getItems().add(item);
+        // Check if the product is already in the wishlist
+        boolean productExists = wishlist.getItems().stream()
+                .anyMatch(item -> item.getProduct().getId().equals(productId));
+
+        if (!productExists) {
+            WishlistItem item = new WishlistItem();
+            item.setProduct(product);
+            item.setWishlist(wishlist); // Ensure wishlist reference is set
+            wishlist.getItems().add(item);
+        }
+
         wishlistRepository.save(wishlist);
-
         return mapToDTO(wishlist);
     }
 
@@ -85,7 +104,12 @@ public class WishlistService {
         Wishlist wishlist = wishlistRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("Wishlist not found for user with ID: "+userId));
 
-        wishlist.getItems().removeIf(item -> item.getProduct().getId().equals(productId));
+        boolean removed = wishlist.getItems().removeIf(item -> item.getProduct().getId().equals(productId));
+
+        if (!removed) {
+            throw new RuntimeException("Product not found in wishlist");
+        }
+
         wishlistRepository.save(wishlist);
 
         return mapToDTO(wishlist);
