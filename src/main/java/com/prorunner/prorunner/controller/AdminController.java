@@ -50,7 +50,6 @@ public class AdminController {
             user.setPhoneNumber(userDTO.getPhoneNumber());
 
 
-
             // Roles must include ADMIN for this endpoint
             if (userDTO.getRoles() == null || userDTO.getRoles().isEmpty()) {
                 userDTO.getRoles().add("ADMIN");
