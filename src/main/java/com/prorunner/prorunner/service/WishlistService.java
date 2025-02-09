@@ -18,7 +18,7 @@ import org.springframework.stereotype.Service;
 import java.util.stream.Collectors;
 
 @Service
-public class WishlistService {
+public class WishlistService {        //wishlistService
 
     @Autowired
     private UserRepository userRepository;
