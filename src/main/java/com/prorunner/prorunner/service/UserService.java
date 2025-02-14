@@ -36,6 +36,7 @@ public class UserService implements UserDetailsService {
     private final CartRepository cartRepository;
 
     private final PasswordEncoder passwordEncoder;
+
     @Autowired
     private final AddressRepository addressRepository;
 
