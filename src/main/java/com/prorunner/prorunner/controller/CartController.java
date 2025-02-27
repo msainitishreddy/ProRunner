@@ -66,7 +66,12 @@ public class CartController {
                                                                       @RequestParam(name = "productId") Long productId,
                                                                       @RequestParam(name = "quantity") int quantity){
         try {
+            System.out.println("Received request: sessionId = " + sessionId + ", userId = " + userId +
+                    ", productId = " + productId + ", quantity = " + quantity);
             logger.info("Adding product {} with quantity {} to cart", productId, quantity);
+            if((sessionId == null || sessionId.isEmpty())&& userId == null){
+                throw new IllegalArgumentException("Either sessionId or userId must be provide...");
+            }
             CartDTO updatedCart = cartService.addProductToCart(sessionId, userId, productId, quantity);
             return ResponseEntity.ok(new StandardResponse<>("Product added to cart successfully", updatedCart));
         } catch (IllegalArgumentException e) {

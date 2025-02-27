@@ -92,7 +92,6 @@ public class CartService {
             throw new IllegalArgumentException("Provide a valid quantity");
         }
 
-
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product with ID " + productId + " does not exist"));
 
@@ -101,16 +100,7 @@ public class CartService {
         }
 
         logger.info("Adding product {} with quantity {} to cart", productId, quantity);
-
-//        if ((sessionId == null || sessionId.isEmpty()) && userId == null) {
-//            throw new IllegalArgumentException("Either sessionId or userId must be provided");
-//        }
-
-//        if (product.getAvailableStock() == null || product.getAvailableStock() < quantity) {
-//            throw new RuntimeException("Only " + product.getAvailableStock() + " units available for product: " + product.getName());
-//        }
-
-
+        
         CartProduct cartProduct = cartProductRepository.findByCartAndProduct(cart, product)
                 .orElseGet(() -> new CartProduct(cart, product, 0, product.getPrice()));
 
@@ -133,9 +123,12 @@ public class CartService {
         if (userId != null) {
             return cartRepository.findByUserId(userId)
                     .orElseGet(() -> createUserCart(userId));
-        } else {
+        } else if(sessionId != null){
+            logger.info("Checking for existing cart with sessionId: {}", sessionId);
             return cartRepository.findBySessionId(sessionId)
                     .orElseGet(() -> createGuestCart(sessionId));
+        }else {
+            throw new IllegalArgumentException("Either sessionId or userId must be provided");
         }
     }
 
