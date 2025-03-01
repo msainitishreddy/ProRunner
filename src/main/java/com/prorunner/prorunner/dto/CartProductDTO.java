@@ -8,11 +8,15 @@ public class CartProductDTO {
 
     private String productName;
 
+    private String imageUrl;
+
     private int quantity;
 
     private Double unitPrice;
 
     private Double subTotal;
+
+
 
     public Long getId() {
         return id;
@@ -36,6 +40,14 @@ public class CartProductDTO {
 
     public void setProductName(String productName) {
         this.productName = productName;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
     }
 
     public int getQuantity() {

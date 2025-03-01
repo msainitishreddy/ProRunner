@@ -6,6 +6,7 @@ import com.prorunner.prorunner.exception.UsernameAlreadyExistsException;
 import com.prorunner.prorunner.model.Address;
 import com.prorunner.prorunner.model.User;
 import com.prorunner.prorunner.payload.LoginRequest;
+import com.prorunner.prorunner.repository.UserRepository;
 import com.prorunner.prorunner.service.UserService;
 import com.prorunner.prorunner.util.JwtUtil;
 import com.prorunner.prorunner.util.StandardResponse;
@@ -43,6 +44,9 @@ public class UserController {
     @Autowired
     private AuthenticationManager authenticationManager;
 
+    @Autowired
+    private UserRepository userRepository;
+
     @PostMapping("/login")
     public ResponseEntity<String> loginUser(@Valid @RequestBody LoginRequest loginRequest) {
         try {
@@ -52,8 +56,11 @@ public class UserController {
                             loginRequest.getPassword()
                     )
             );
-
+            //fetching user details...
             UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+
+            User user = userRepository.findByUsername(loginRequest.getUsername())
+                    .orElseThrow(()->new RuntimeException("User not Found"));
 
             // Extract roles as a Set<String>
             Set<String> roles = userDetails.getAuthorities()
@@ -62,7 +69,7 @@ public class UserController {
                     .collect(Collectors.toSet());
 
             // Generate the token
-            String token = jwtUtil.generateToken(userDetails.getUsername(), roles);
+            String token = jwtUtil.generateToken(user.getId(),userDetails.getUsername(), roles);
 
             return ResponseEntity.ok("Bearer " + token);
         } catch (BadCredentialsException e) {

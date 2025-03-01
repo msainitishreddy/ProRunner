@@ -44,7 +44,7 @@ public class UserService implements UserDetailsService {
     public UserService(UserRepository userRepository, CartRepository cartRepository, @Lazy PasswordEncoder passwordEncoder, AddressRepository addressRepository) {
         this.userRepository = userRepository;
         this.cartRepository = cartRepository;
-        this.passwordEncoder = passwordEncoder; // Lazy injection to resolve circular dependency
+        this.passwordEncoder = passwordEncoder;
         this.addressRepository = addressRepository;
     }
 

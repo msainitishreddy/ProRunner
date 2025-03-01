@@ -19,9 +19,10 @@ public class JwtUtil {
     private static final long EXPIRATION_TIME = 1000 * 60 * 60 * 10; // 10 hours
 
     // Generate Token
-    public String generateToken(String username, Set<String> roles) {
+    public String generateToken(Long userId, String username, Set<String> roles) {
         return Jwts.builder()
                 .setSubject(username)
+                .claim("userId", userId)
                 .claim("roles", roles)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
@@ -60,5 +61,13 @@ public class JwtUtil {
         return ((List<?>) claims.get("roles")).stream()
                 .map(Object::toString)
                 .collect(Collectors.toSet());
+    }
+
+    public Long extractUserId(String token) {
+        return Jwts.parser()
+                .setSigningKey(key)
+                .parseClaimsJws(token)
+                .getBody()
+                .get("userId", Long.class);  // Extract userId from the claims
     }
 }

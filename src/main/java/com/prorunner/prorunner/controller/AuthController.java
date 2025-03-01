@@ -1,6 +1,8 @@
 package com.prorunner.prorunner.controller;
 
+import com.prorunner.prorunner.model.User;
 import com.prorunner.prorunner.payload.LoginRequest;
+import com.prorunner.prorunner.repository.UserRepository;
 import com.prorunner.prorunner.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -20,11 +22,13 @@ public class AuthController {
 
     private final AuthenticationManager authenticationManager;
     private final JwtUtil jwtUtil;
+    private final UserRepository userRepository;
 
     @Autowired
-    public AuthController(AuthenticationManager authenticationManager, JwtUtil jwtUtil) {
+    public AuthController(AuthenticationManager authenticationManager, JwtUtil jwtUtil, UserRepository userRepository) {
         this.authenticationManager = authenticationManager;
         this.jwtUtil = jwtUtil;
+        this.userRepository = userRepository;
     }
 
     @PostMapping("/login")
@@ -45,8 +49,12 @@ public class AuthController {
                 .map(auth -> auth.getAuthority())
                 .collect(Collectors.toSet());
 
+        //Fetch User
+        User user = userRepository.findByUsername(loginRequest.getUsername())
+                .orElseThrow(()-> new RuntimeException("User not found"));
+
         // Generate token
-        String token = jwtUtil.generateToken(userDetails.getUsername(), roles);
+        String token = jwtUtil.generateToken(user.getId(),userDetails.getUsername(), roles);
 
         Map<String, String> response = new HashMap<>();
         response.put("accessToken", token);

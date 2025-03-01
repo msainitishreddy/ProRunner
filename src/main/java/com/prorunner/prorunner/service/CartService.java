@@ -62,7 +62,10 @@ public class CartService {
     }
 
     private CartProductDTO mapToDTO(CartProduct cartProduct){
-        return modelMapper.map(cartProduct,CartProductDTO.class);
+//        return modelMapper.map(cartProduct,CartProductDTO.class);
+        CartProductDTO cartProductDTO = modelMapper.map(cartProduct, CartProductDTO.class);
+        cartProductDTO.setImageUrl(cartProduct.getProduct().getImageUrl()); // Make sure the image URL is mapped
+        return cartProductDTO;
     }
 
 
