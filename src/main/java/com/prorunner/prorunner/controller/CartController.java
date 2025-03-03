@@ -35,7 +35,8 @@ public class CartController {
     })
     @GetMapping("/{cartId}")
     @PreAuthorize("hasAuthority('ADMIN') or @securityService.isCartOwner(#cartId)")
-    public ResponseEntity<StandardResponse<CartDTO>> viewCart(@PathVariable Long cartId,
+    public ResponseEntity<StandardResponse<CartDTO>> viewCart(
+                                                     @PathVariable Long cartId,
                                                      @RequestParam(defaultValue = "0") int page,
                                                      @RequestParam(defaultValue = "10") int size){
         try {
@@ -109,25 +110,34 @@ public class CartController {
     /**
      * Update the quantity of a product in the cart.
      */
-    @Operation(summary = "Increasing or Decreasing the product quantity in the cart")
+    @Operation(summary = "Update product quantity in the cart")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Product quantity updated successfully"),
-            @ApiResponse(responseCode = "404", description = "Cart or Product not found")
+            @ApiResponse(responseCode = "404", description = "Cart or Product not found"),
+            @ApiResponse(responseCode = "400", description = "Invalid input")
     })
-    @PatchMapping("/{cartId}/quantity/{productId}")
-    @PreAuthorize("hasAuthority('USER') or @securityService.isCartOwner(#cartId)")
+    @PatchMapping("/quantity/{productId}")
+    //@PreAuthorize("hasAuthority('USER') or @securityService.isCartOwner(#cartId)")
     public ResponseEntity<StandardResponse<CartDTO>> addProductQuantity(
-            @PathVariable Long cartId,
+            @RequestParam(required = false) Long userId,
+            @RequestParam(required = false) String sessionId,
             @PathVariable Long productId,
             @RequestParam boolean increment){
         try {
-            CartDTO updatedCart = cartService.addProductQuantity(cartId,productId,increment);
+            logger.info("Received request to update the quantity for product with ID :{} with increment: {}",productId, increment);
+            if((sessionId == null || sessionId.isEmpty()) && userId == null){
+                throw new IllegalArgumentException("Either sessionId or userId must be provided");
+            }
+            CartDTO updatedCart = cartService.addProductQuantity(sessionId, userId, productId, increment);
             String action = increment ? "incremented":"decremented";
             return ResponseEntity.ok(new StandardResponse<>("Product Quantity "+action+" successfully",updatedCart));
-        } catch (RuntimeException e){
-            logger.error("Error in adjusting the quantity: {}", e.getMessage(),e);
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(new StandardResponse<>(e.getMessage(), null));
+        } catch (IllegalArgumentException e){
+            logger.error("Invalid input: {}", e.getMessage(),e);
+            return ResponseEntity.badRequest().body(new StandardResponse<>(e.getMessage(),null));
+        } catch (Exception e){
+            logger.error("Error updating the product quantity: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new StandardResponse<>("An unexpected error occurred", null));
         }
     }
 
@@ -236,6 +246,19 @@ public class CartController {
             return ResponseEntity.ok(new StandardResponse<>("Cart fetched or created successfully", cartDTO));
         } catch (RuntimeException e) {
             logger.error("Error fetching or creating cart for user ID: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new StandardResponse<>(e.getMessage(), null));
+        }
+    }
+
+    @GetMapping("/session/{sessionId}")
+    public ResponseEntity<StandardResponse<CartDTO>> getOrCreateGuestCart(@PathVariable String sessionId) {
+        try {
+            logger.info("Fetching or creating cart for session ID: {}", sessionId);
+            CartDTO cartDTO = cartService.getOrCreateCart(sessionId, null); // userId is null for guest cart
+            return ResponseEntity.ok(new StandardResponse<>("Cart fetched or created successfully", cartDTO));
+        } catch (RuntimeException e) {
+            logger.error("Error fetching or creating cart for session ID: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(new StandardResponse<>(e.getMessage(), null));
         }

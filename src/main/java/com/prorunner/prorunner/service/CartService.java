@@ -142,9 +142,11 @@ public class CartService {
         if(userId !=null){
             cart = cartRepository.findByUserId(userId)
                     .orElseGet(() -> createUserCart(userId));
-        } else {
+        } else if(sessionId != null){
             cart = cartRepository.findBySessionId(sessionId)
                     .orElseGet(() -> createGuestCart(sessionId));
+        } else {
+            throw new IllegalArgumentException("Either sessionId or userId must be provided...");
         }
 
         return mapToDTO(cart);
@@ -160,6 +162,7 @@ public class CartService {
     }
 
     private Cart createGuestCart(String sessionId) {
+
         Cart cart = new Cart();
         cart.setSessionId(sessionId);
         cart.setTotalPrice(0.0);
@@ -194,37 +197,39 @@ public class CartService {
      * Update the quantity of a product in the cart.
      */
     @Transactional
-    public CartDTO addProductQuantity(Long cartId, Long productId, boolean increment){
-        logger.info("Adjusting product quantity (increment: {}) for product {} in cart {}", increment, productId, cartId);
+    public CartDTO addProductQuantity(String sessionId, Long userId, Long productId, boolean increment){
+        logger.info("Adjusting product quantity (increment: {}) for product {}", increment, productId);
 
         //Fetch cart and product
-        Cart cart = cartRepository.findById(cartId)
-                .orElseThrow(()-> new RuntimeException("Cart not found with ID: "+cartId));
+//        Cart cart = cartRepository.findById(cartId)
+//                .orElseThrow(()-> new RuntimeException("Cart not found with ID: "+cartId));
+
+        Cart cart = getOrCreateCartEntity(sessionId, userId);
 
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found with ID: "+productId));
 
         // Find cart and Product
-        CartProduct cartProduct = cartProductRepository.findByCartAndProduct(cart,product)
+        CartProduct cartProduct = cartProductRepository.findByCartAndProduct(cart, product)
                 .orElseThrow(()->new RuntimeException("Product not found in the cart"));
 
         // changing the product quantity ---> increasing or decreasing the quantity required by user or client
         int updatedQuantity = cartProduct.getQuantity() + (increment ? 1 : -1);
 
-        if (updatedQuantity>0){
+        if (updatedQuantity <= 0){
+            logger.info("Deleting product with ID {} from the cart because the quantity is zero", productId);
+            cartProductRepository.delete(cartProduct);
+            cart.getCartProducts().remove(cartProduct);
+            product.setReservedStock(product.getReservedStock()-cartProduct.getQuantity());
+            productRepository.save(product);
+        } else {
             cartProduct.setQuantity(updatedQuantity);
             cartProduct.updateSubtotal();
             cartProductRepository.save(cartProduct);
-        } else {
-            // Remove product from cart if required quantity is less than 1.
-            cartProductRepository.delete(cartProduct);
         }
-
         updateCartTotal(cart);
-
         return mapToDTO(cartRepository.save(cart));
     }
-
 
     @Transactional
     public void removeProductFromAllCarts(Long productId){
@@ -283,7 +288,7 @@ public class CartService {
         Double totalPrice = cart.getCartProducts().stream()
                 .mapToDouble(CartProduct::getSubtotal)
                 .sum();
-        cart.setTotalPrice(totalPrice != null ? totalPrice : 0.0);
+        cart.setTotalPrice(totalPrice);
         cartRepository.save(cart);
     }
 
@@ -335,7 +340,6 @@ public class CartService {
             logger.info("No guest cart found or guest cart is empty. Returning the user's cart.");
             return mapToDTO(userCart);
         }
-
         // Merge guest cart products into user cart
         for (CartProduct guestProduct : guestCart.getCartProducts()) {
 
