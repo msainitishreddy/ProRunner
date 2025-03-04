@@ -70,7 +70,7 @@ public class CartController {
             System.out.println("Received request: sessionId = " + sessionId + ", userId = " + userId +
                     ", productId = " + productId + ", quantity = " + quantity);
             logger.info("Adding product {} with quantity {} to cart", productId, quantity);
-            if((sessionId == null || sessionId.isEmpty())&& userId == null){
+            if((sessionId == null || sessionId.isEmpty()) && userId == null){
                 throw new IllegalArgumentException("Either sessionId or userId must be provide...");
             }
             CartDTO updatedCart = cartService.addProductToCart(sessionId, userId, productId, quantity);
@@ -93,17 +93,26 @@ public class CartController {
             @ApiResponse(responseCode = "200", description = "Product removed from the cart successfully"),
             @ApiResponse(responseCode = "404", description = "Cart or Product not found")
     })
-    @DeleteMapping("/{cartId}/remove/{productId}")
-    @PreAuthorize("hasAuthority('USER') or @securityService.isCartOwner(#cartId)")
-    public ResponseEntity<StandardResponse<?>> removeProductFromCart(@PathVariable Long cartId, @PathVariable Long productId){
+    @DeleteMapping("/remove/{productId}")
+    //@PreAuthorize("hasAuthority('USER') or @securityService.isCartOwner(#cartId)")
+    public ResponseEntity<StandardResponse<?>> removeProductFromCart(@RequestParam(required = false) String sessionId,
+                                                                     @RequestParam(required = false) Long userId,
+                                                                     @PathVariable Long productId){
         try {
-            logger.info("Removing product {} from cart {}", productId, cartId);
-            CartDTO updatedCart = cartService.removeProductFromCart(cartId, productId);
+            if((sessionId == null || sessionId.isEmpty()) && userId == null){
+                throw new IllegalArgumentException("Either sessionId or userId must be provided");
+            }
+            logger.info("Removing product {} from cart {}", productId, userId);
+            CartDTO updatedCart = cartService.removeProductFromCart(sessionId, userId, productId);
             return ResponseEntity.ok(new StandardResponse<>("Product removed from the cart successfully", updatedCart));
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             logger.error("Error removing product from cart: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(new StandardResponse<>(e.getMessage(), null));
+        } catch (Exception e){
+            logger.error("Unexpected error: ",e.getMessage(),e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new StandardResponse<>("An unexpected error occurred", null));
         }
     }
 
