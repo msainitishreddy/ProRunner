@@ -16,8 +16,7 @@ import java.util.stream.Collectors;
 public class JwtUtil {
 
     private final SecretKey key = Keys.secretKeyFor(SignatureAlgorithm.HS256); // Generate a secure key
-    private static final long EXPIRATION_TIME = 1000 * 60 * 60 * 10; // 10 hours
-
+    private static final long EXPIRATION_TIME = 1000 * 60 * 60 * 10;// 10 hours
     // Generate Token
     public String generateToken(Long userId, String username, Set<String> roles) {
         return Jwts.builder()

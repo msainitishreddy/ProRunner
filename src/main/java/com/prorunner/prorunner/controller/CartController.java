@@ -285,7 +285,7 @@ public class CartController {
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     @PostMapping("/merge")
-    @PreAuthorize("hasAuthority('USER')")
+    //@PreAuthorize("hasAuthority('USER')")
     public ResponseEntity<StandardResponse<CartDTO>> mergeCarts(
             @RequestParam String guestSessionId,
             @RequestParam Long userId) {

@@ -20,6 +20,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -275,7 +277,6 @@ public class CartService {
 
 
     private void updateCartTotal(Cart cart) {
-
         logger.info("Updating total price for cart ID: {}", cart.getId());
         Double totalPrice = cart.getCartProducts().stream()
                 .mapToDouble(CartProduct::getSubtotal)
@@ -346,6 +347,7 @@ public class CartService {
         userCart.setTotalPrice(userCart.getCartProducts().stream()
                 .mapToDouble(CartProduct::getSubtotal)
                 .sum());
+
         cartRepository.save(userCart);
 
         // Delete guest cart
@@ -355,6 +357,5 @@ public class CartService {
 
         return mapToDTO(userCart);
     }
-
-
+    
 }
