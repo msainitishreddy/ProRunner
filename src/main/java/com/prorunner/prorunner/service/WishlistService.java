@@ -51,17 +51,29 @@ public class WishlistService {        //wishlistService
 
     @Transactional
     public WishlistDTO getOrCreateWishlist(Long userId){
-        return wishlistRepository.findById(userId)
-                .map(this::mapToDTO)
-                .orElseGet(()->{
+//        return wishlistRepository.findById(userId)
+//                .map(this::mapToDTO)
+//                .orElseGet(()->{
+//                    User user = userRepository.findById(userId)
+//                            .orElseThrow(() -> new RuntimeException("User not found with ID: "+userId));
+//
+//                    Wishlist wishlist = new Wishlist();
+//                    wishlist.setUser(user);
+//                    wishlistRepository.save(wishlist);
+//                    return mapToDTO(wishlist);
+//                });
+        Wishlist wishlist = wishlistRepository.findByUserId(userId)
+                .orElseGet(() -> {
                     User user = userRepository.findById(userId)
-                            .orElseThrow(() -> new RuntimeException("User not found with ID: "+userId));
+                            .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
 
-                    Wishlist wishlist = new Wishlist();
-                    wishlist.setUser(user);
-                    wishlistRepository.save(wishlist);
-                    return mapToDTO(wishlist);
+                    // Create a new wishlist if it doesn't exist
+                    Wishlist newWishlist = new Wishlist();
+                    newWishlist.setUser(user);
+                    return wishlistRepository.save(newWishlist); // Save and return the new wishlist
                 });
+
+        return mapToDTO(wishlist);
     }
 
     @Transactional

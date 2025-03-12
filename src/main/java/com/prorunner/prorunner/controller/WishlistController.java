@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/wishlist")
+@CrossOrigin(origins = "http://localhost:3000")
 public class WishlistController {
 
     @Autowired
@@ -23,9 +24,9 @@ public class WishlistController {
             @ApiResponse(responseCode = "200", description = "Wishlist fetched successfully"),
             @ApiResponse(responseCode = "404", description = "User not found")
     })
-    @GetMapping("/{userId}")
-    @PreAuthorize("hasAuthority('USER') or @securityService.isUser(#userId)")
-    public ResponseEntity<StandardResponse<WishlistDTO>> getOrCreateWishlist(@PathVariable Long userId){
+    @GetMapping("/{user}")
+    //@PreAuthorize("hasAuthority('USER') or @securityService.isUser(#userId)")
+    public ResponseEntity<StandardResponse<WishlistDTO>> getOrCreateWishlist(@RequestParam Long userId){
         WishlistDTO wishlist = wishlistService.getOrCreateWishlist(userId);
         return ResponseEntity.ok(new StandardResponse<>("Wishlist fetched successfully", wishlist));
     }
@@ -36,9 +37,9 @@ public class WishlistController {
             @ApiResponse(responseCode = "200", description = "Product added successfully"),
             @ApiResponse(responseCode = "404", description = "Product or user not found")
     })
-    @PostMapping("/{userId}/add/{productId}")
-    @PreAuthorize("hasAuthority('USER') or @securityService.isUser(#userId)")
-    public  ResponseEntity<StandardResponse<WishlistDTO>> addProductToWishlist(@PathVariable Long userId, @PathVariable Long productId){
+    @PostMapping("/add")
+    //@PreAuthorize("hasAuthority('USER') or @securityService.isUser(#userId)")
+    public  ResponseEntity<StandardResponse<WishlistDTO>> addProductToWishlist(@RequestParam Long userId, @RequestParam Long productId){
 
         WishlistDTO wishlist = wishlistService.addProductToWishlist(userId,productId);
         return ResponseEntity.ok(new StandardResponse<>("Product added to wishlist successfully", wishlist));
@@ -51,7 +52,7 @@ public class WishlistController {
             @ApiResponse(responseCode = "404", description = "Wishlist or product not found")
     })
     @DeleteMapping("/{userId}/remove/{productId}")
-    @PreAuthorize("hasAuthority('USER') or @securityService.isUser(#userId)")
+    //@PreAuthorize("hasAuthority('USER') or @securityService.isUser(#userId)")
     public ResponseEntity<StandardResponse<WishlistDTO>> removeProductFromWishlist(@PathVariable Long userId, @PathVariable Long productId) {
         WishlistDTO wishlist = wishlistService.removeProductFromWishlist(userId, productId);
         return ResponseEntity.ok(new StandardResponse<>("Product removed from wishlist successfully", wishlist));

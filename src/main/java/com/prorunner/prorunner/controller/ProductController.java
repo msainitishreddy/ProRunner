@@ -52,7 +52,7 @@ public class ProductController {
             @RequestParam(required = false) Double maxPrice,
             @RequestParam(required = false) Boolean availability,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int pageSize,
+            @RequestParam(defaultValue = "20") int pageSize,
             @RequestParam(defaultValue = "id") String sortBy
     ) {
         try {
