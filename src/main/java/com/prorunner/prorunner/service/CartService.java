@@ -54,6 +54,7 @@ public class CartService {
                 .stream()
                 .map(this::mapToDTO)
                 .collect(Collectors.toList()));
+        cartDTO.setTotalPrice(cart.getTotalPrice());
         return cartDTO;
     }
 
@@ -124,7 +125,7 @@ public class CartService {
 
         return mapToDTO(cart);
     }
-
+    @Transactional
     private Cart getOrCreateCartEntity(String sessionId, Long userId) {
         if (userId != null) {
             return cartRepository.findByUserId(userId)
@@ -138,7 +139,7 @@ public class CartService {
         }
     }
 
-
+    @Transactional
     public CartDTO getOrCreateCart(String sessionId, Long userId){
         Cart cart;
 
@@ -277,17 +278,9 @@ public class CartService {
     }
 
     @Transactional
-    private void updateCartTotal(Cart cart) {
-//        logger.info("Updating total price for cart ID: {}", cart.getId());
-//        Double totalPrice = cart.getCartProducts().stream()
-//                .mapToDouble(CartProduct::getSubtotal)
-//                .sum();
-//        totalPrice = Math.round(totalPrice*100.0)/100.0;
-//        cart.setTotalPrice(totalPrice);
-//        cartRepository.save(cart);
-        List<CartProduct> cartProducts = cartProductRepository.findByCart(cart);
-        logger.info("Updating total price for cart ID: {}", cart.getId());
-        BigDecimal totalPrice = cart.getCartProducts().stream()
+    private void updateCartTotal(Cart cart) {logger.info("Updating total price for cart ID: {}", cart.getId());
+
+        BigDecimal totalPrice = cartProductRepository.findByCart(cart).stream()
                 .map(cartProduct -> BigDecimal.valueOf(cartProduct.getSubtotal()))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
