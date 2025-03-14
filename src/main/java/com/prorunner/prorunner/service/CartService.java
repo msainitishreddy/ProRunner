@@ -119,6 +119,7 @@ public class CartService {
 
         product.setReservedStock(product.getReservedStock() + quantity);
         productRepository.save(product);
+
         updateCartTotal(cart);
 
         return mapToDTO(cart);
@@ -275,14 +276,22 @@ public class CartService {
         return mapToDTO(cartProductRepository.findByCart(cart));
     }
 
-
+    @Transactional
     private void updateCartTotal(Cart cart) {
+//        logger.info("Updating total price for cart ID: {}", cart.getId());
+//        Double totalPrice = cart.getCartProducts().stream()
+//                .mapToDouble(CartProduct::getSubtotal)
+//                .sum();
+//        totalPrice = Math.round(totalPrice*100.0)/100.0;
+//        cart.setTotalPrice(totalPrice);
+//        cartRepository.save(cart);
+        List<CartProduct> cartProducts = cartProductRepository.findByCart(cart);
         logger.info("Updating total price for cart ID: {}", cart.getId());
-        Double totalPrice = cart.getCartProducts().stream()
-                .mapToDouble(CartProduct::getSubtotal)
-                .sum();
-        totalPrice = Math.round(totalPrice*100.0)/100.0;
-        cart.setTotalPrice(totalPrice);
+        BigDecimal totalPrice = cart.getCartProducts().stream()
+                .map(cartProduct -> BigDecimal.valueOf(cartProduct.getSubtotal()))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        cart.setTotalPrice(totalPrice.setScale(2, RoundingMode.HALF_UP).doubleValue());
         cartRepository.save(cart);
     }
 
@@ -305,7 +314,6 @@ public class CartService {
                     newCart.setTotalPrice(0.0);
                     return cartRepository.save(newCart);
                 });
-
         return mapToDTO(cart);
     }
 

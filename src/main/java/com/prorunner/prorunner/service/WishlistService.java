@@ -15,6 +15,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -46,22 +47,15 @@ public class WishlistService {        //wishlistService
         WishlistItemDTO dto = new WishlistItemDTO();
         dto.setProductId(item.getProduct().getId());
         dto.setProductName(item.getProduct().getName());
+        dto.setImageUrl(item.getProduct().getImageUrl()); // Ensure this field exists
+        dto.setSize(item.getProduct().getSize()); // Ensure this field exists
+        dto.setColor(item.getProduct().getColor()); // Ensure this field exists
+        dto.setUnitPrice(item.getProduct().getPrice()); // Ensure this field exists
         return dto;
     }
 
     @Transactional
     public WishlistDTO getOrCreateWishlist(Long userId){
-//        return wishlistRepository.findById(userId)
-//                .map(this::mapToDTO)
-//                .orElseGet(()->{
-//                    User user = userRepository.findById(userId)
-//                            .orElseThrow(() -> new RuntimeException("User not found with ID: "+userId));
-//
-//                    Wishlist wishlist = new Wishlist();
-//                    wishlist.setUser(user);
-//                    wishlistRepository.save(wishlist);
-//                    return mapToDTO(wishlist);
-//                });
         Wishlist wishlist = wishlistRepository.findByUserId(userId)
                 .orElseGet(() -> {
                     User user = userRepository.findById(userId)
