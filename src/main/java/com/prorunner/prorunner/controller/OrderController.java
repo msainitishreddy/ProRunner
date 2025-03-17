@@ -27,7 +27,7 @@ public class OrderController {
             @ApiResponse(responseCode = "400", description = "Invalid request or error placing order")
     })
     @PostMapping("/{cartId}")
-    @PreAuthorize("hasAuthority('USER') or hasAuthority('ADMIN')")
+    //@PreAuthorize("hasAuthority('USER') or hasAuthority('ADMIN')")
     public ResponseEntity<StandardResponse<OrderDTO>> placeOrder(@PathVariable @NotNull Long cartId,
                                                               @RequestParam @NotNull Long userId,
                                                               @RequestParam @NotNull Long addressId){

@@ -61,11 +61,13 @@ public class OrderService {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
+        logger.info("User found: {}", user.getId());
         Cart cart = cartRepository.findById(cartId)
                 .orElseThrow(()-> new RuntimeException("Cart not found."));
+        logger.info("Cart found with ID: {}", cart.getId());
         Address shippingAddress = addressRepository.findById(addressId)
                 .orElseThrow(() -> new RuntimeException("Address not found with ID: " + addressId));
-
+        logger.info("Address found with ID: {}", shippingAddress.getId());
 
         if(cart.getCartProducts().isEmpty()){
             throw new RuntimeException("Cannot place order as cart found empty.");
@@ -115,7 +117,7 @@ public class OrderService {
 
         //clear cart products and update cart
         cartProductRepository.deleteAllByCart(cart);
-        cart.setCartProducts(new ArrayList<>()); // Clear in-memory references
+        cart.getCartProducts().clear(); // Clear in-memory references
         cart.setTotalPrice(0.0); // setting the cart total price to 0 after emptying the cart.
         cartRepository.save(cart);
 

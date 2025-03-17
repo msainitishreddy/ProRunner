@@ -226,6 +226,14 @@ public class UserService implements UserDetailsService {
         addressRepository.delete(address);
     }
 
+    public List<Address> getUserAddresses(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
+
+        return user.getAddresses();
+    }
+
+
 
 
 }

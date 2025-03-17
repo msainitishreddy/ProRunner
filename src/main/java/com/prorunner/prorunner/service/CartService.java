@@ -187,8 +187,11 @@ public class CartService {
                 .orElseThrow(() -> new RuntimeException("Product not found in the cart"));
         logger.info("CartProduct found: Quantity {} at Price {}", cartProduct.getQuantity(), cartProduct.getUnitPrice());
 
+//        cartProductRepository.delete(cartProduct);
+//        cart.getCartProducts().remove(cartProduct);
+        cart.getCartProducts().removeIf(cp -> Objects.equals(cp.getId(), cartProduct.getId()));
         cartProductRepository.delete(cartProduct);
-        cart.getCartProducts().remove(cartProduct);
+        cartRepository.save(cart);
         product.setReservedStock(product.getReservedStock()-cartProduct.getQuantity());
         productRepository.save(product);
         updateCartTotal(cart);
@@ -215,8 +218,12 @@ public class CartService {
 
         if (updatedQuantity <= 0){
             logger.info("Deleting product with ID {} from the cart because the quantity is zero", productId);
+            //cartProductRepository.delete(cartProduct);
+            //cart.getCartProducts().remove(cartProduct);
+            cart.getCartProducts().removeIf(cp -> Objects.equals(cp.getId(), cartProduct.getId()));
             cartProductRepository.delete(cartProduct);
-            cart.getCartProducts().remove(cartProduct);
+            cartRepository.save(cart);  // Ensures cart's state is persisted
+
             product.setReservedStock(product.getReservedStock()-cartProduct.getQuantity());
             productRepository.save(product);
         } else {
@@ -264,7 +271,7 @@ public class CartService {
             throw new RuntimeException("Cart is already empty");
         }
 
-        cartProductRepository.deleteAllByCart(cart);
+        cart.getCartProducts().clear();
         cart.setTotalPrice(0.0);
         return mapToDTO(cartRepository.save(cart));
     }
@@ -352,7 +359,10 @@ public class CartService {
         cartRepository.save(userCart);
 
         // Delete guest cart
+        //cartRepository.delete(guestCart);
+        guestCart.getCartProducts().clear(); // Clear before deletion to avoid orphan removal error
         cartRepository.delete(guestCart);
+        cartRepository.save(userCart);
 
         logger.info("Guest cart merged successfully into user cart for user ID: {}", userId);
 

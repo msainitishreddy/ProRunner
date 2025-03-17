@@ -51,9 +51,9 @@ public class WishlistController {
             @ApiResponse(responseCode = "200", description = "Product removed successfully"),
             @ApiResponse(responseCode = "404", description = "Wishlist or product not found")
     })
-    @DeleteMapping("/{userId}/remove/{productId}")
+    @DeleteMapping("/remove")
     //@PreAuthorize("hasAuthority('USER') or @securityService.isUser(#userId)")
-    public ResponseEntity<StandardResponse<WishlistDTO>> removeProductFromWishlist(@PathVariable Long userId, @PathVariable Long productId) {
+    public ResponseEntity<StandardResponse<WishlistDTO>> removeProductFromWishlist(@RequestParam Long userId, @RequestParam Long productId) {
         WishlistDTO wishlist = wishlistService.removeProductFromWishlist(userId, productId);
         return ResponseEntity.ok(new StandardResponse<>("Product removed from wishlist successfully", wishlist));
     }

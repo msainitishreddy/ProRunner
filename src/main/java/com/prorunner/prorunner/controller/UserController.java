@@ -27,8 +27,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
@@ -156,6 +155,30 @@ public class UserController {
             return ResponseEntity.ok("Hello, " + username + "! Your roles are: " + roles);
         } catch (Exception e) {
             return ResponseEntity.status(401).body("Unauthorized: Invalid token");
+        }
+    }
+
+    @GetMapping("/{userId}/addresses")
+    @PreAuthorize("hasAuthority('USER') or @securityService.isUser(#userId)")
+    public ResponseEntity<StandardResponse<List<Address>>> getUserAddresses(@PathVariable Long userId) {
+        try {
+            User user = userService.getUserById(userId);
+
+            if (user == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new StandardResponse<>("User not found", null));
+            }
+
+            System.out.println("User Addresses: " + user.getAddresses());  // Log addresses
+
+            if (user.getAddresses() == null || user.getAddresses().isEmpty()) {
+                return ResponseEntity.ok(new StandardResponse<>("No addresses found", new ArrayList<>()));
+            }
+
+            return ResponseEntity.ok(new StandardResponse<>("Addresses fetched successfully", user.getAddresses()));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new StandardResponse<>(e.getMessage(), null));
         }
     }
 
