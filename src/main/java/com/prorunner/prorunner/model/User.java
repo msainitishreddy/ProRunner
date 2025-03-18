@@ -46,6 +46,7 @@ public class User {
     @Column(name = "role")
     private Set<String> roles = new HashSet<>();
 
+
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     @JsonManagedReference
     private Cart cart;
