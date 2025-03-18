@@ -63,8 +63,9 @@ public class JwtUtil {
     }
 
     public Long extractUserId(String token) {
-        return Jwts.parser()
+        return Jwts.parserBuilder()
                 .setSigningKey(key)
+                .build()
                 .parseClaimsJws(token)
                 .getBody()
                 .get("userId", Long.class);  // Extract userId from the claims
