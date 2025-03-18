@@ -6,6 +6,7 @@ import com.prorunner.prorunner.model.Cart;
 import com.prorunner.prorunner.repository.AddressRepository;
 import com.prorunner.prorunner.repository.CartRepository;
 import com.prorunner.prorunner.repository.UserRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -68,6 +69,7 @@ public class UserService implements UserDetailsService {
         );
     }
 
+    @Transactional
     public User registerUser(User user, Set<String> roles) {
 
         if(user.getPassword() == null || user.getPassword().trim().isEmpty()){
@@ -85,7 +87,7 @@ public class UserService implements UserDetailsService {
         user.setPassword(passwordEncoder.encode(user.getPassword()));
 
         if (roles == null || roles.isEmpty()) {
-            roles = Set.of("USER"); // Default role
+            roles = Set.of("USER");
         }
 
         user.setRoles(roles);
