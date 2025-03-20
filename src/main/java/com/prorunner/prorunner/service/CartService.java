@@ -100,8 +100,16 @@ public class CartService {
 
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product with ID " + productId + " does not exist"));
+        logger.info("Product details: Name: {}, Total Stock: {}, Reserved Stock: {}",
+                product.getName(),
+                product.getAvailableStock(),
+                product.getReservedStock());
 
-        if (product.getAvailableStock() < quantity) {
+        //int availableStock = product.getStock()-product.getReservedStock();
+        int availableStock = product.getStock();
+        logger.info("Calculated available stock: {}", availableStock);
+        if (availableStock < (quantity)) {
+            logger.error("Insufficient stock for product: {}", product.getName());
             throw new RuntimeException("Insufficient stock for product: " + product.getName());
         }
 
@@ -187,8 +195,6 @@ public class CartService {
                 .orElseThrow(() -> new RuntimeException("Product not found in the cart"));
         logger.info("CartProduct found: Quantity {} at Price {}", cartProduct.getQuantity(), cartProduct.getUnitPrice());
 
-//        cartProductRepository.delete(cartProduct);
-//        cart.getCartProducts().remove(cartProduct);
         cart.getCartProducts().removeIf(cp -> Objects.equals(cp.getId(), cartProduct.getId()));
         cartProductRepository.delete(cartProduct);
         cartRepository.save(cart);
@@ -218,17 +224,21 @@ public class CartService {
 
         if (updatedQuantity <= 0){
             logger.info("Deleting product with ID {} from the cart because the quantity is zero", productId);
-            //cartProductRepository.delete(cartProduct);
-            //cart.getCartProducts().remove(cartProduct);
+
             cart.getCartProducts().removeIf(cp -> Objects.equals(cp.getId(), cartProduct.getId()));
             cartProductRepository.delete(cartProduct);
-            cartRepository.save(cart);  // Ensures cart's state is persisted
+            cartRepository.save(cart);
 
             product.setReservedStock(product.getReservedStock()-cartProduct.getQuantity());
             productRepository.save(product);
         } else {
             cartProduct.setQuantity(updatedQuantity);
             cartProduct.updateSubtotal();
+            if(increment){
+                product.setReservedStock(product.getReservedStock()+1);
+            } else{
+                product.setReservedStock(product.getReservedStock()-1);
+            }
             cartProductRepository.save(cartProduct);
         }
         updateCartTotal(cart);

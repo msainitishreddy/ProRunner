@@ -87,12 +87,20 @@ public class OrderService {
         for (CartProduct cartProduct:new ArrayList<>(cart.getCartProducts())){
             Product product = cartProduct.getProduct();
 
-            // check if product stock is sufficient for placing an order...
-            if (product.getStock() < cartProduct.getQuantity()){
+            int availableStock = product.getStock();
+            if (availableStock < cartProduct.getQuantity()){
                 throw new RuntimeException("Insufficient stock for product: " + product.getName());
             }
-            // Deduct stock from the product stock...
-            product.setStock(product.getStock() - cartProduct.getQuantity());
+
+            int quantityToDeduct = cartProduct.getQuantity();
+            if (product.getStock() >= quantityToDeduct) {
+                product.setStock(product.getStock()-quantityToDeduct);
+                product.setReservedStock(product.getReservedStock() - quantityToDeduct);
+            } else {
+                int remainingToDeduct = quantityToDeduct - product.getReservedStock();
+                product.setReservedStock(0);
+                product.setStock(product.getStock() - remainingToDeduct);
+            }
             productRepository.save(product);
 
             //Create and add orderItem
